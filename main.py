@@ -37,7 +37,7 @@ def local_to_s3(local_dir, upload_info):
     """s3로 업로드.
 
     Args:
-        tmp_path (str): 저장 경로 (config)
+        local_dir (str): 로컬 파일 경로
         upload_info (dict): s3_bucket, s3_path, options (config)
 
     """
