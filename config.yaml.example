@@ -1,0 +1,7 @@
+ftp:
+  server: myftp_ip.co.kr
+  port: 21
+  user: myftpuser
+  pass: myftppasswd
+local_home: '/home/ubuntu/.myftp'
+s3_home: 's3://my-bucket/my-path'
