@@ -5,20 +5,10 @@
 ## Requirement
 
 ```sh
-sudo apt install snakemake
 # version 3.2.5
 sudo apt install ncftp
 
 sudo apt install awscli
-```
-
-## 실행
-
-```sh
-snakemake -j 
-
-# config 파일 별도 지정시
-snakemake -j -C myconfig.yaml
 ```
 
 ## 메모
