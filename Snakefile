@@ -62,10 +62,10 @@ rule extract:
     output:
         'temp' + '{filepath}'
     params:
-        user = USER
-        passwd = PASS
-        server = SERVER
-        port = PORT
+        user = USER ,
+        passwd = PASS ,
+        server = SERVER ,
+        port = PORT ,
     shell:
         """
         ncftpget -u {params.user} -p {params.passwd} ftp://{params.server}:{params.port}.{filepath}
@@ -103,7 +103,7 @@ rule load:
     output:
         DONE_LOG_PATH + 'load_{server}.done'
     params:
-        local_path =           './temp/' + '{server}' + '/' + TARGET_DIR
+        local_path =           './temp/' + '{server}' + '/' + TARGET_DIR ,
         s3_path    = S3_BUCKET + '/raw/' + '{server}' + '/' + TARGET_DIR
     shell:
         """
