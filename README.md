@@ -19,7 +19,6 @@ sudo apt install awscli
 snakemake -j -F
 ```
 
-
 ## 메모
 
 - awscli가 boto3보다 빨라서 사용
