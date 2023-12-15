@@ -3,8 +3,7 @@ SERVER = config['ftp']['server']
 PORT = config['ftp']['port']
 USER = config['ftp']['user']
 PASS = config['ftp']['pass']
-LOCAL_HOME = config['local_home']
-S3_HOME = config['s3_home']
+S3_BUCKET = config['s3_bucket']
 TARGET_DATE = config['target_date']
 
 import os
@@ -13,14 +12,17 @@ import util
 from ftplib import FTP
 from datetime import datetime, date, timedelta
 
+
 # 대상날짜 디렉토리 확정
+TARGET_DIR = ''
 if TARGET_DATE == 'yesterday':
-    yesterday = date.today() - timedelta(days=1)
-    TARGET_DATE = yesterday.strftime("%Y%m%d")   # yyyymmdd string
-    target_dir = yesterday.strftime("%Y-%m/%d")  # yyyy-mm/dd string
+    TARGET_DATE = util.get_yesterday("%Y%m%d")   # yyyymmdd string
+    TARGET_DIR = util.get_yesterday("%Y-%m/%d")  # yyyy-mm/dd string
 else:  # 특정날짜대상 작업시, config['target_date']에 yyyymmdd꼴 string을 입력 후 시작
-    TARGET_DATE = TARGET_DATE  
-    target_dir = datetime.strptime(TARGET_DATE, "%Y%m%d").strftime("%Y-%m/%d")  
+    TARGET_DIR = datetime.strptime(TARGET_DATE, "%Y%m%d").strftime("%Y-%m/%d")  
+
+# Done Log 경로 확정
+DONE_LOG_PATH = f'done_log/{TARGET_DATE}/'
 
 # FTP 세션 연결
 ftp = FTP()
@@ -35,7 +37,7 @@ servers = ftp.nlst()
 all_filepaths = util.get_ftp_all_filepaths(ftp, '/')
 target_filepaths = []
 for file in all_filepaths:
-    if (target_dir in file) and ('.log' in file):
+    if (TARGET_DIR in file) and ('.log' in file):
         target_filepaths.append(file)
 
 # FTP 세션 종료
@@ -45,16 +47,15 @@ ftp.quit()
 
 rule all:
     input:
-        'donelog/' + 'multi_load.done'
+        DONE_LOG_PATH + 'multi_load.done'
     output:
-        'donelog/' + f'allclear_{날짜}'
+        DONE_LOG_PATH + 'daily.done'
+    params:
+        s3_bucket = S3_BUCKET
     shell:
         """
-        # 작업 완료 후 임시 저장경로 삭제
-        # rm -rf temp
-        # rm -rf donelog/
-        # touch {output}
-        # aws s3 cp {output} {s3_home}/{output}
+        touch {output}
+        aws s3 cp {output} {params.s3_bucket}/{output}
         """
 
 rule extract:
@@ -86,7 +87,7 @@ rule multi_extract_transform:
     input:
         expand('temp' + '{filepath}.gz', file=target_filepaths)
     output:
-        'donelog/' + 'multi_extract_transform.done'
+        DONE_LOG_PATH + 'multi_extract_transform.done'
     shell:
         """
         touch {output}
@@ -98,23 +99,23 @@ rule multi_extract_transform:
 
 rule load:
     input:
-        'donelog/' + 'multi_extract_transform.done'
+        DONE_LOG_PATH + 'multi_extract_transform.done'
     output:
-        'donelog/' + 'load_{server}.done'
+        DONE_LOG_PATH + 'load_{server}.done'
     params:
-        local_dir = f'temp/{target_dir}'
-        s3_path = f'{s3_home}/{server}/{target_dir}'
+        local_path =           './temp/' + '{server}' + '/' + TARGET_DIR
+        s3_path    = S3_BUCKET + '/raw/' + '{server}' + '/' + TARGET_DIR
     shell:
         """
-        aws s3 cp {params.local_dir} {params.s3_path} --recursive 
+        aws s3 cp {params.local_path} {params.s3_path} --recursive 
         rm -rf temp/{server}
         touch {output}
         """
 rule multi_load:
     input:
-        expand('donelog/' + 'load_{server}.done', server=servers)
+        expand(DONE_LOG_PATH + 'load_{server}.done', server=servers)
     output:
-        'donelog/' + 'multi_load.done'
+        DONE_LOG_PATH + 'multi_load.done'
     shell:
         """
         touch {output}
