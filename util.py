@@ -4,8 +4,7 @@ from datetime import date, timedelta
 
 def get_yesterday(format):
     yesterday = date.today() - timedelta(days=1)
-    yesterday = yesterday.strftime(format)
-    return yesterday
+    return yesterday.strftime(format)
 
 
 def get_ftp_directory_items(ftp, path):
