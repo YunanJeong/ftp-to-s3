@@ -25,9 +25,9 @@ ftp.cwd("/")
 servers = ftp.nlst()
 
 # 대상 파일경로 전체 목록
-all_files = util.get_ftp_all_filepaths(ftp, '/')
-log_files = []
-for file in all_files:
+all_filepaths = util.get_ftp_all_filepaths(ftp, '/')
+target_filepaths = []
+for file in all_filepaths:
     if (target_dir in file) and ('.log' in file):
         log_files.append(file)
 
@@ -36,52 +36,62 @@ ftp.quit()
 
 
 
-print (log_files)
-
-
-rule start:
-    input: 
-    output:
-        '/home/ubuntu/private/ftp-to-s3/temp.done'
-    script:
-        """ls"""
-
-rule end:
+rule all:
     input:
-        '/home/ubuntu/private/ftp-to-s3/temp.done'
+        'donelog/' + 'multi_load.done'
+    shell:
+        """
+        # 작업 완료 후 임시 저장경로 삭제
+        """
 
-# rule all:
-#     input:
-        # 마지막 DONE
+rule extract:
+    output:
+        'temp/' + '{file}'
+    params:
+        user = USER
+        passwd = PASS
+        server = SERVER
+        port = PORT
+    shell:
+        """
+        ls
+        # ncftpget -u {params.user} -p {params.passwd} ftp://{params.server}:{params.port}/{file}
+        """
+rule transform:
+    input:
+        'temp/' + '{file}'
+    output:
+        'temp/' + '{file}.gz'
+    script:
+        """
+        gzip {input}
+        """
+rule multi_extract_transform:
+    input:
+        expand('temp/' + '{file}', file=target_filepaths)
+    output:
+        'donelog/' + 'multi_extract_transform.done'
+    shell:
+        """
+        touch {output} 
+        """
 
-# rule download_file_by_file:
-#     input:
-#     output:
-#     shell:
-#         # 다운로드
+rule load:
+    input:
+        'donelog/' + 'multi_extract_transform.done'
+    output:
+        'donelog/' + 'load_{server}.done'
+    shell:
+        """
+        # aws s3 cp {} {} 
+        """
+rule multi_load:
+    input:
+        expand('donelog/' + 'load_{server}.done', server=servers)
+    output:
+        'donelog/' + 'multi_load.done'
+    shell:
+        """
+        touch {output}
+        """
 
-# rule download_server_by_server:
-#     input:
-#     output:
-
-# rule download:
-#     input:
-#     output:
-
-# rule compress:
-#     input:
-#         expand(TMP_DIR + f'/{TARGET_DATE}/decomp/' + '{file}.done', file=log_files)
-#     output:
-        
-#     script:
-#         f"""
-#         gzip {file}
-#         """
-
-# rule multi_compress:
-#     input:
-#     output:
-
-# rule upload_to_s3:
-#     input:
-#     output:
