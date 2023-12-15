@@ -19,6 +19,20 @@ sudo apt install awscli
 snakemake -j -F
 ```
 
+## 스케쥴링
+
+```sh
+# 조회
+sudo crontab -l
+
+# 등록
+sudo crontab -e
+
+# 매일 서버 시간 기준 새벽 01:00에 수행 예
+0 1 * * *  python /home/ubuntu/ftp-to-s3/start-script.sh
+0 1 * * *  python /home/ubuntu/ftp-to-s3/start-script.sh
+```
+
 ## 메모
 
 - awscli가 boto3보다 빨라서 사용
