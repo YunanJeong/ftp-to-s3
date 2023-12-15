@@ -29,7 +29,7 @@ all_filepaths = util.get_ftp_all_filepaths(ftp, '/')
 target_filepaths = []
 for file in all_filepaths:
     if (target_dir in file) and ('.log' in file):
-        log_files.append(file)
+        target_filepaths.append(file)
 
 # FTP 세션 종료
 ftp.quit()
@@ -42,11 +42,13 @@ rule all:
     shell:
         """
         # 작업 완료 후 임시 저장경로 삭제
+        # rm -rf temp
+        # rm -rf donelog/
         """
 
 rule extract:
     output:
-        'temp/' + '{file}'
+        'temp' + '{filepath}'
     params:
         user = USER
         passwd = PASS
@@ -54,26 +56,29 @@ rule extract:
         port = PORT
     shell:
         """
-        ls
-        # ncftpget -u {params.user} -p {params.passwd} ftp://{params.server}:{params.port}/{file}
+        ncftpget -u {params.user} -p {params.passwd} ftp://{params.server}:{params.port}.{filepath}
+
+        # 현재 경로에 다운로드된 파일을 output경로로 이동  # output에 포함된 경로는 snakemake가 자동생성
+        filename=$(basename {filepath})
+        mv $filename {output}
         """
 rule transform:
     input:
-        'temp/' + '{file}'
+        'temp' + '{filepath}'
     output:
-        'temp/' + '{file}.gz'
+        'temp' + '{filepath}.gz'
     script:
         """
         gzip {input}
         """
 rule multi_extract_transform:
     input:
-        expand('temp/' + '{file}', file=target_filepaths)
+        expand('temp' + '{filepath}.gz', file=target_filepaths)
     output:
         'donelog/' + 'multi_extract_transform.done'
     shell:
         """
-        touch {output} 
+        touch {output}
         """
 
 rule load:
