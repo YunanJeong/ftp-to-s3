@@ -4,7 +4,7 @@ PORT = config['ftp']['port']
 USER = config['ftp']['user']
 PASS = config['ftp']['pass']
 S3_BUCKET = config['s3_bucket']
-TARGET_DATE = config['target_date']
+TARGET_DATE = str(config['target_date'])
 
 import os
 import sys
