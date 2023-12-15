@@ -85,7 +85,7 @@ rule transform:
         """
 rule multi_extract_transform:
     input:
-        expand('temp' + '{filepath}.gz', file=target_filepaths)
+        expand('temp' + '{filepath}.gz', filepath=target_filepaths)
     output:
         DONE_LOG_PATH + 'multi_extract_transform.done'
     shell:
