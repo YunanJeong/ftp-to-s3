@@ -1,4 +1,5 @@
 configfile: 'localtest.yaml'
+SERVICE = config['service']
 SERVER = config['ftp']['server'] 
 PORT = config['ftp']['port']
 USER = config['ftp']['user']
@@ -22,7 +23,7 @@ else:  # 특정날짜대상 작업시, config['target_date']에 yyyymmdd꼴 stri
     TARGET_DIR = datetime.strptime(TARGET_DATE, "%Y%m%d").strftime("%Y-%m/%d")  
 
 # Done Log 경로 확정
-DONE_LOG_PATH = f'done_log/{TARGET_DATE}/'
+DONE_LOG_PATH = f'done_log/{TARGET_DATE}/{SERVICE}/'
 
 # FTP 세션 연결
 ftp = FTP()
