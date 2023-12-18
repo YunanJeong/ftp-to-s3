@@ -47,7 +47,10 @@ ftp.quit()
 
 rule all:
     input:
-        DONE_LOG_PATH + 'multi_load.done'
+        # DONE_LOG_PATH + 'multi_extract.done'
+        # DONE_LOG_PATH + 'copy.done'
+        DONE_LOG_PATH + 'multi_transform.done'
+        # DONE_LOG_PATH + 'multi_load.done'
     output:
         DONE_LOG_PATH + 'daily.done'
     params:
@@ -55,12 +58,12 @@ rule all:
     shell:
         """
         touch {output}
-        aws s3 cp {output} {params.s3_bucket}/{output}
+        # aws s3 cp {output} {params.s3_bucket}/{output}
         """
 
 rule extract:
     output:
-        'temp' + '{filepath}'
+        'temp/extracted' + '{filepath}'  # *.gz가 포함되지 않도록해야 함
     params:
         user = USER ,
         passwd = PASS ,
@@ -68,26 +71,41 @@ rule extract:
         port = PORT ,
     shell:
         """
-        ncftpget -u {params.user} -p {params.passwd} ftp://{params.server}:{params.port}.{filepath}
+        ncftpget -u {params.user} -p {params.passwd} ftp://{params.server}:{params.port}.{wildcards.filepath}
 
         # 현재 경로에 다운로드된 파일을 output경로로 이동  # output에 포함된 경로는 snakemake가 자동생성
-        filename=$(basename {filepath})
+        filename=$(basename {wildcards.filepath})
         mv $filename {output}
         """
+rule multi_extract:
+    input:
+        expand('temp/extracted' + '{filepath}', filepath=target_filepaths)
+    output:
+        DONE_LOG_PATH + 'multi_extract.done'
+    shell:
+        """
+        touch {output}
+        """
+
 rule transform:
     input:
-        'temp' + '{filepath}'
+        DONE_LOG_PATH + 'multi_extract.done'
     output:
-        'temp' + '{filepath}.gz'
-    script:
+        'temp/transformed' + '{filepath}.gz'
+    params:
+        extracted = 'temp/extracted{filepath}' ,
+        transformed = 'temp/transformed{filepath}'
+    shell:
         """
-        gzip {input}
+        cp {params.extracted} {params.transformed} 
+        gzip {params.transformed}
         """
-rule multi_extract_transform:
+rule multi_transform:
     input:
-        expand('temp' + '{filepath}.gz', filepath=target_filepaths)
+        # DONE_LOG_PATH + 'copy.done'
+        expand('temp/transformed' + '{filepath}.gz', filepath=target_filepaths)
     output:
-        DONE_LOG_PATH + 'multi_extract_transform.done'
+        DONE_LOG_PATH + 'multi_transform.done'
     shell:
         """
         touch {output}
@@ -97,27 +115,27 @@ rule multi_extract_transform:
   # 네트워크 대역폭 부족 방지(모든파일 추출작업을 100% 완료 후, S3업로드 시작)
   # 스토리지 부족 방지 (업로드 직후 완료파일들은 로컬에서 즉시삭제 필요. input, output을 실제 데이터로 쓴다면, 파일삭제시 snakemake DAG에서 오류 가능성)
 
-rule load:
-    input:
-        DONE_LOG_PATH + 'multi_extract_transform.done'
-    output:
-        DONE_LOG_PATH + 'load_{server}.done'
-    params:
-        local_path =           './temp/' + '{server}' + '/' + TARGET_DIR ,
-        s3_path    = S3_BUCKET + '/raw/' + '{server}' + '/' + TARGET_DIR
-    shell:
-        """
-        aws s3 cp {params.local_path} {params.s3_path} --recursive 
-        rm -rf temp/{server}
-        touch {output}
-        """
-rule multi_load:
-    input:
-        expand(DONE_LOG_PATH + 'load_{server}.done', server=servers)
-    output:
-        DONE_LOG_PATH + 'multi_load.done'
-    shell:
-        """
-        touch {output}
-        """
+# rule load:
+#     input:
+#         DONE_LOG_PATH + 'multi_transform.done'
+#     output:
+#         DONE_LOG_PATH + 'load_{server}.done'
+#     params:
+#         local_path =           './temp/' + '{server}' + '/' + TARGET_DIR ,
+#         s3_path    = S3_BUCKET + '/raw/' + '{server}' + '/' + TARGET_DIR
+#     shell:
+#         """
+#         aws s3 cp {params.local_path} {params.s3_path} --recursive 
+#         rm -rf temp/{wildcards.server}
+#         touch {output}
+#         """
+# rule multi_load:
+#     input:
+#         expand(DONE_LOG_PATH + 'load_{server}.done', server=servers)
+#     output:
+#         DONE_LOG_PATH + 'multi_load.done'
+#     shell:
+#         """
+#         touch {output}
+#         """
 
