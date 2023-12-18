@@ -28,9 +28,8 @@ sudo crontab -l
 # 등록
 sudo crontab -e
 
-# 매일 서버 시간 기준 새벽 01:00에 수행 예
-0 1 * * *  python /home/ubuntu/ftp-to-s3/start-script.sh
-0 1 * * *  python /home/ubuntu/ftp-to-s3/start-script.sh
+# 매일 서버 시간 기준 새벽 01:00에 수행 예 (Snakefile 경로로 이동 후 실행)
+0 1 * * *  cd /home/ubuntu/private/ftp-to-s3/ && snakemake -j -F
 ```
 
 ## 메모
