@@ -18,7 +18,7 @@ sudo apt install awscli
 # 가장 자주 쓰는 실행 커맨드
 # -j는 멀티코어 사용
 # -F는 재실행시 처음부터 빌드. DAG input,output 데이터가 남아있어도 처음부터 실행
-# --configfile={my-annother-config.yaml} => cli에서 오버라이딩하여 다른 configfile 선택가능
+# --configfile => 별도 confie 파일 지정시 사용 (file 단위가 아니라 yaml key 단위로 오버라이딩 하는 것임)
 snakemake -j -F --configfile=localtest.yaml
 ```
 
