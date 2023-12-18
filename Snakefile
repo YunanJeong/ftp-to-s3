@@ -23,7 +23,7 @@ else:  # 특정날짜대상 작업시, config['target_date']에 yyyymmdd꼴 stri
     TARGET_DIR = datetime.strptime(TARGET_DATE, "%Y%m%d").strftime("%Y-%m/%d")  
 
 # Done Log 경로 확정
-DONE_LOG_PATH = f'done_log/{TARGET_DATE}/{SERVICE}/'
+DONE_LOG_PATH = f'done_log/{SERVICE}/{TARGET_DATE}/'
 
 # FTP 세션 연결
 ftp = FTP()
@@ -46,7 +46,6 @@ for file in all_filepaths:
 ftp.quit()
 
 
-
 rule all:
     input:
         DONE_LOG_PATH + 'multi_load.done'
@@ -64,10 +63,7 @@ rule extract:
     output:
         'temp' + '{filepath}.log'  # *.gz가 포함되지 않도록해야 함
     params:
-        user = USER ,
-        passwd = PASS ,
-        server = SERVER ,
-        port = PORT ,
+        user = USER, passwd = PASS, server = SERVER, port = PORT,
         target = '{filepath}.log'  # shell에 wildcard 사용시, {wildcards.filepath}로 쓰거나 OR 이와같이 params로 표현가능
     shell:
         """
