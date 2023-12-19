@@ -1,0 +1,8 @@
+service: localtest
+ftp:  # source_raw_data
+  server: myftp_ip.co.kr
+  port: 21
+  user: myftpuser
+  pass: myftppasswd
+s3_bucket: 's3://my-bucket/my-path'
+target_date: yesterday

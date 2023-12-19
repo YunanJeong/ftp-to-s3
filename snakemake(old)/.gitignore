@@ -1,0 +1,10 @@
+*alert*
+*yaml*
+!*.example
+
+__pycache__
+.snakemake
+
+*temp*
+*done_log*
+*donelog*
