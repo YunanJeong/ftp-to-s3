@@ -48,13 +48,14 @@ ftp.quit()
 
 rule all:
     input:
-        DONE_LOG_PATH + 'multi_load.done'
+        DONE_LOG_PATH + 'multi_process.done'
     output:
         DONE_LOG_PATH + 'daily.done'
     params:
         s3_bucket = S3_BUCKET
     shell:
         """
+        rm -rf {input}
         touch {output}
         aws s3 cp {output} {params.s3_bucket}/{output}
         """
@@ -73,62 +74,39 @@ rule extract:
         filename=$(basename {params.target})
         mv $filename {output}
         """
-rule multi_extract:
-    input:
-        expand('temp' + '{filepath}.log', filepath=target_filepaths)  # *.gz가 포함되지 않도록해야 함
-    output:
-        DONE_LOG_PATH + 'multi_extract.done'
-    shell:
-        """
-        touch {output}
-        """
 
 rule transform:
     input:
-        DONE_LOG_PATH + 'multi_extract.done'
+        'temp' + '{filepath}.log'
     output:
         'temp' + '{filepath}.log.gz'
-    params:
-        target = '{filepath}.log'
     shell:
         """
-        gzip temp/{params.target}
+        gzip {input}
         """
-rule multi_transform:
-    input:
-        expand('temp' + '{filepath}.log.gz', filepath=target_filepaths)
-    output:
-        DONE_LOG_PATH + 'multi_transform.done'
-    shell:
-        """
-        touch {output}
-        """
-
-# 여기서부터 input, output을 모두 DONELOG로 처리한다.
-  # 네트워크 대역폭 부족 방지(모든파일 추출작업을 100% 완료 후, S3업로드 시작)
-  # 스토리지 부족 방지 (업로드 직후 완료파일들은 로컬에서 즉시삭제 필요. input, output을 실제 데이터로 쓴다면, 파일삭제시 snakemake DAG에서 오류 가능성)
 
 rule load:
     input:
-        DONE_LOG_PATH + 'multi_transform.done'
+        'temp' + '{filepath}.log.gz'
     output:
-        DONE_LOG_PATH + 'load_{server}.done'
+        # S3.remote('temp' + '{filepath}.log.gz')
+        DONE_LOG_PATH + '{filepath}.done'
     params:
-        local_path =           './temp/' + '{server}' + '/' + TARGET_DIR ,
-        s3_path    = S3_BUCKET + '/raw/' + '{server}' + '/' + TARGET_DIR
+        s3_path    = S3_BUCKET + '/raw' + '{filepath}.log.gz'
     shell:
         """
-        aws s3 cp {params.local_path} {params.s3_path} --recursive 
-        rm -rf temp/{wildcards.server}
-        touch {output}
-        """
-rule multi_load:
-    input:
-        expand(DONE_LOG_PATH + 'load_{server}.done', server=servers)
-    output:
-        DONE_LOG_PATH + 'multi_load.done'
-    shell:
-        """
-        touch {output}
+        aws s3 cp {input} {params.s3_path}
+        rm -rf {input}
+        touch {output} 
         """
 
+rule multi_process:
+    input:
+        expand(DONE_LOG_PATH + '{filepath}.done', filepath=target_filepaths)
+    output:
+        DONE_LOG_PATH + 'multi_process.done'
+    shell:
+        """
+        rm -rf {input}
+        touch {output}
+        """
