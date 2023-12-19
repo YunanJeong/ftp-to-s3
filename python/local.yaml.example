@@ -1,0 +1,7 @@
+ftp:
+  server: my.ftp.co.kr
+  port: 21
+  user: userid
+  pass: password
+local_home: '/home/ubuntu/.myftp'
+s3_home: 's3://my-bucket/yunantest'
