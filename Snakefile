@@ -55,7 +55,7 @@ rule all:
         s3_bucket = S3_BUCKET
     shell:
         """
-        rm -rf {input}
+        # rm -rf {input}  # 중단부분부터 재작업하려면 input,output 지우면 안됨
         touch {output}
         aws s3 cp {output} {params.s3_bucket}/{output}
         """
@@ -107,6 +107,6 @@ rule multi_process:
         DONE_LOG_PATH + 'multi_process.done'
     shell:
         """
-        rm -rf {input}
+        # rm -rf {input}  # 중단부분부터 재작업하려면 input,output 지우면 안됨
         touch {output}
         """
