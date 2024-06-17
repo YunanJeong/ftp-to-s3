@@ -107,6 +107,8 @@ rule multi_process:
         DONE_LOG_PATH + 'multi_process.done'
     shell:
         """
+        # 개별 파일 별 donelog가 너무 많으므로, 전체 작업 성공후 삭제 해준다.
+        # 재작업이 잦다면 개별 파일 별 donelog도 보존해주는 것이 좋다.
         rm -rf {input}
         touch {output}
         """
