@@ -25,7 +25,7 @@ if TARGET_DATE == 'yesterday':
 else:  # 특정날짜대상 작업시, config['target_date']에 yyyymmdd꼴 string을 입력 후 시작
     TARGET_DIR = datetime.strptime(TARGET_DATE, "%Y%m%d").strftime("%Y-%m/%d")  
 
-# Done Log 경로 확정
+# Done Log 경로 확정  # S3.Remote 사용시 S3 버킷 명도 주소에 포함 필요
 DONE_LOG_PATH = f'done_log/{SERVICE}/{TARGET_DATE}/'
 
 # FTP 세션 연결
@@ -49,6 +49,16 @@ for file in all_filepaths:
 ftp.quit()
 
 
+onsuccess:
+    print('snakemake success')
+    shell( f"aws s3 cp  {DONE_LOG_PATH}daily.done   {S3_BUCKET}/{DONE_LOG_PATH}{TARGET_DATE}.success" )
+
+onerror:
+    print("snakemake failed")
+    # 실패시에만 로그를 S3에 업로드하도록 설정
+    # '.snakemake/log' 경로에 전체 로그가 자동저장되고 있으며 최신 로그파일을 추출하여 S3로 업로드
+    shell( f"aws s3 cp $(ls -t .snakemake/log/*.snakemake.log | head -n 1) {S3_BUCKET}/{DONE_LOG_PATH}" )
+
 rule all:
     input:
         DONE_LOG_PATH + 'multi_process.done'  # S3.remote(DONE_LOG_PATH + 'multi_process.done')
@@ -60,7 +70,7 @@ rule all:
         """
         rm -rf {input}
         touch {output}
-        aws s3 cp {output} {params.s3_bucket}/{output}
+        # aws s3 cp {output} {params.s3_bucket}/{output}
         """
 
 rule extract:
