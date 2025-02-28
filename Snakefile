@@ -29,6 +29,7 @@ else:  # 특정날짜대상 작업시, config['target_date']에 yyyymmdd꼴 stri
 DONE_LOG_PATH = f'done_log/{SERVICE}/{TARGET_DATE}/'
 
 target_filepaths = []
+ftp = None
 try:
     # FTP 세션 연결
     ftp = FTP()
@@ -57,7 +58,8 @@ except Exception as e:
 
 finally:
     # FTP 세션 종료
-    ftp.quit()
+    if ftp:  # None이 아니면 종료
+        ftp.quit()
 
 onsuccess:
     print('snakemake success')
