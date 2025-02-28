@@ -13,6 +13,9 @@ import util
 from ftplib import FTP
 from datetime import datetime, date, timedelta
 
+# boto3 Required  # S3 모듈을 쓰면, input, output에서 done_log를 찍을 때 코드가 간결해짐
+# from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
+# S3 = S3RemoteProvider(keep_local=True)
 
 # 대상날짜 디렉토리 확정
 TARGET_DIR = ''
@@ -48,9 +51,9 @@ ftp.quit()
 
 rule all:
     input:
-        DONE_LOG_PATH + 'multi_process.done'
+        DONE_LOG_PATH + 'multi_process.done'  # S3.remote(DONE_LOG_PATH + 'multi_process.done')
     output:
-        DONE_LOG_PATH + 'daily.done'
+        DONE_LOG_PATH + 'daily.done'          # S3.remote(DONE_LOG_PATH + 'daily.done')
     params:
         s3_bucket = S3_BUCKET
     shell:
@@ -89,8 +92,7 @@ rule load:
     input:
         'temp' + '{filepath}.log.gz'
     output:
-        # S3.remote('temp' + '{filepath}.log.gz')
-        DONE_LOG_PATH + '{filepath}.done'
+        DONE_LOG_PATH + '{filepath}.done'  # S3.remote('temp' + '{filepath}.log.gz')
     params:
         s3_path    = S3_BUCKET + '/raw' + '{filepath}.log.gz'
     shell:
@@ -102,9 +104,9 @@ rule load:
 
 rule multi_process:
     input:
-        expand(DONE_LOG_PATH + '{filepath}.done', filepath=target_filepaths)
+        expand(DONE_LOG_PATH + '{filepath}.done', filepath=target_filepaths)  # S3.remote(expand(DONE_LOG_PATH + '{filepath}.done', filepath=target_filepaths))
     output:
-        DONE_LOG_PATH + 'multi_process.done'
+        DONE_LOG_PATH + 'multi_process.done'                                  # S3.remote(DONE_LOG_PATH + 'multi_process.done')
     shell:
         """
         # 개별 파일 별 donelog가 너무 많으므로, 전체 작업 성공후 삭제 해준다.
