@@ -50,7 +50,7 @@ except Exception as e:
     print(e)
     # 실패시에만 로그를 S3에 업로드하도록 설정
     shell( f"cp $(ls -t .snakemake/log/*.snakemake.log | head -n 1) {DONE_LOG_PATH}{TARGET_DATE}.log" )
-    shell( f"echo {e} >> {DONE_LOG_PATH}{TARGET_DATE}.log"  )
+    shell( f"echo {e} >> {DONE_LOG_PATH}{TARGET_DATE}.log"  )  # 마지막 로그에 에러메시지 추가
     shell( f"aws s3 cp {DONE_LOG_PATH}{TARGET_DATE}.log {S3_BUCKET}/{DONE_LOG_PATH}{TARGET_DATE}.log" )
     
     sys.exit(1)
