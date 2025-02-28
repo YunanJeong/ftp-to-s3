@@ -28,26 +28,31 @@ else:  # 특정날짜대상 작업시, config['target_date']에 yyyymmdd꼴 stri
 # Done Log 경로 확정  # S3.Remote 사용시 S3 버킷 명도 주소에 포함 필요
 DONE_LOG_PATH = f'done_log/{SERVICE}/{TARGET_DATE}/'
 
-# FTP 세션 연결
-ftp = FTP()
-ftp.connect(SERVER, PORT)
-ftp.login(USER, PASS)
-ftp.cwd("/")
-
-# 최상위경로(서버목록) 체크
-servers = ftp.nlst()
-
-# 대상 파일경로 전체 목록
-all_filepaths = util.get_ftp_all_filepaths(ftp, '/')
 target_filepaths = []
-for file in all_filepaths:
-    if (TARGET_DIR in file) and ('.log' in file):
-        file = file[:-4]  # 확장자 .log를 문자열에서 제거
-        target_filepaths.append(file)
+try:
+    # FTP 세션 연결
+    ftp = FTP()
+    ftp.connect(SERVER, PORT)
+    ftp.login(USER, PASS)
+    ftp.cwd("/")
 
-# FTP 세션 종료
-ftp.quit()
+    # 최상위경로(서버목록) 체크
+    servers = ftp.nlst()
 
+    # 대상 파일경로 전체 목록
+    all_filepaths = util.get_ftp_all_filepaths(ftp, '/')
+    for file in all_filepaths:
+        if (TARGET_DIR in file) and ('.log' in file):
+            file = file[:-4]  # 확장자 .log를 문자열에서 제거
+            target_filepaths.append(file)
+
+    # FTP 세션 종료
+    ftp.quit()
+except Exception as e:
+    print(e)
+    # 실패시에만 로그를 S3에 업로드하도록 설정
+    shell( f"aws s3 cp $(ls -t .snakemake/log/*.snakemake.log | head -n 1) {S3_BUCKET}/{DONE_LOG_PATH}" )
+    sys.exit(1)
 
 onsuccess:
     print('snakemake success')
