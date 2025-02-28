@@ -46,13 +46,18 @@ try:
             file = file[:-4]  # 확장자 .log를 문자열에서 제거
             target_filepaths.append(file)
 
-    # FTP 세션 종료
-    ftp.quit()
 except Exception as e:
     print(e)
     # 실패시에만 로그를 S3에 업로드하도록 설정
-    shell( f"aws s3 cp $(ls -t .snakemake/log/*.snakemake.log | head -n 1) {S3_BUCKET}/{DONE_LOG_PATH}" )
+    shell( f"cp $(ls -t .snakemake/log/*.snakemake.log | head -n 1) {DONE_LOG_PATH}{TARGET_DATE}.log" )
+    shell( f"echo {e} >> {DONE_LOG_PATH}{TARGET_DATE}.log"  )
+    shell( f"aws s3 cp {DONE_LOG_PATH}{TARGET_DATE}.log {S3_BUCKET}/{DONE_LOG_PATH}{TARGET_DATE}.log" )
+    
     sys.exit(1)
+
+finally:
+    # FTP 세션 종료
+    ftp.quit()
 
 onsuccess:
     print('snakemake success')
