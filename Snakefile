@@ -66,6 +66,7 @@ onsuccess:
     shell( f"aws s3 cp  {DONE_LOG_PATH}daily.done   {S3_BUCKET}/{DONE_LOG_PATH}{TARGET_DATE}.success" )
 
 onerror:
+    # onerror의 에러 캐치범위는 rule 내부까지로 제한되어 있음. 탑레벨 Python 로직은 캐치불가
     print("snakemake failed")
     # 실패시에만 로그를 S3에 업로드하도록 설정
     # '.snakemake/log' 경로에 전체 로그가 자동저장되고 있으며 최신 로그파일을 추출하여 S3로 업로드
